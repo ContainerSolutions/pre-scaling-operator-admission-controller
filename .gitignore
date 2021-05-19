@@ -1,0 +1,10 @@
+
+#Ignoring certs
+*.csr
+*.pem
+*.crt
+*.key
+*.srl
+
+#Ignoring generated manifest with CA bundle
+acmanifest.yaml

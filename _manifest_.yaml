@@ -1,0 +1,83 @@
+---
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: ac
+    namespace: default
+    labels:
+      name: ac
+  spec:
+    ports:
+    - name: webhook
+      port: 443
+      targetPort: 8080
+    selector:
+      name: ac 
+---
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ac
+    namespace: default
+    labels:
+      name: ac
+  spec:
+    selector:
+      matchLabels:
+        name: ac
+    replicas: 1
+    template:
+      metadata:
+        name: ac 
+        labels:
+          name: ac
+      spec:
+        containers:
+          - name: webhook
+            image: andreas131989/webhook:demo
+            imagePullPolicy: Always
+            args:
+              - -alsologtostderr
+              - --log_dir=/
+              - -v=10
+              - 2>&1
+            resources:
+              limits:
+                memory: 50Mi
+                cpu: 300m
+              requests:
+                memory: 00Mi
+                cpu: 300m
+            volumeMounts:
+              - name: webhook-certs
+                mountPath: /etc/certs
+                readOnly: true
+              - name: logs
+                mountPath: /tmp
+            securityContext:
+              readOnlyRootFilesystem: true
+        volumes:
+          - name: webhook-certs
+            secret:
+              secretName: acsecret
+          - name: logs
+            emptyDir: {}
+---
+  apiVersion: admissionregistration.k8s.io/v1beta1
+  kind: ValidatingWebhookConfiguration
+  metadata:
+    name: ac
+  webhooks:
+    - name: admission-controller.containersol.org
+      clientConfig:
+        service:
+          name: ac
+          namespace: default
+          path: "/validate"
+        caBundle: "${CA_BUNDLE}"
+      rules:
+        - operations: ["UPDATE"]
+          apiGroups: ["apps"]
+          apiVersions: ["v1"]
+          resources: ["deployments"]
+      failurePolicy: Ignore
