@@ -1,20 +1,17 @@
-name: PreScaleOperator
+name: AdmissionController
 on:
   pull_request:
   push:
     branches:
-      - master
+      - main
   release:
     types:
       - edited
       - created
 
 env:
-  CR_USER: ${{ secrets.CR_USER }}
-  CR_PAT: ${{ secrets.CR_PAT }}
   DH_USER: ${{ secrets.DOCKERHUB_USER }}
   DH_TOKEN: ${{ secrets.DOCKERHUB_PASS }}
-  OKD_GITHUB_TOKEN: ${{ secrets.OKD_GITHUB_TOKEN }}
 
 jobs:
   tests-and-build:
@@ -40,9 +37,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
-      - name: Docker ghcr.io login
-        run: echo '${{ env.CR_PAT }}' | docker login ghcr.io -u ${{ env.CR_USER }} --password-stdin
-
       - name: Docker login
         run: echo '${{ env.DH_TOKEN }}' | docker login -u ${{ env.DH_USER }} --password-stdin
 
@@ -58,7 +52,7 @@ jobs:
         id: docker_meta
         uses: crazy-max/ghaction-docker-meta@v1
         with:
-          images: ghcr.io/containersolutions/pre-scaling-operator-admission-controller,containersol/pre-scaling-operator-admission-controller
+          images: containersol/pre-scaling-operator-admission-controller
           tag-sha: true
           tag-custom: ci
           tag-semver: |

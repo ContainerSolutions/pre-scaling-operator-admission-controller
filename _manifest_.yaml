@@ -34,7 +34,7 @@
       spec:
         containers:
           - name: webhook
-            image: andreas131989/webhook:demo
+            image: containersol/pre-scaling-operator-admission-controller:ci
             imagePullPolicy: Always
             args:
               - -alsologtostderr
