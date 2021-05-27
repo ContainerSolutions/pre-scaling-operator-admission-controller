@@ -36,6 +36,11 @@
           - name: webhook
             image: containersol/pre-scaling-operator-admission-controller:ci
             imagePullPolicy: Always
+            env:
+              - name: OPERATOR_NAMESPACE
+                value: "pre-scaling-operator-system"
+              - name: OPERATOR_SERVICE_ACCOUNT
+                value: "default"
             args:
               - -alsologtostderr
               - --log_dir=/

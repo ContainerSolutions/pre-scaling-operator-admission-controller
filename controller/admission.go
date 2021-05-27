@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/golang/glog"
@@ -56,19 +57,21 @@ func (gs *ServerHandler) Serve(w http.ResponseWriter, r *http.Request) {
 
 	newobject := getObjectData(arRequest.Request.Kind.Kind, raw)
 
-	optinFound, optInValue := getLabelValue(newobject.Labels, "scaler/opt-in")
+	optInFound, optInValue := getLabelValue(newobject.Labels, "scaler/opt-in")
 
-	if !optinFound {
+	operatorNamespace := "system:serviceaccount:" + os.Getenv("OPERATOR_NAMESPACE") + ":" + os.Getenv("OPERATOR_SERVICE_ACCOUNT")
+
+	// If the user initiating the request is the pre-scaling operator, we should allow the update
+	if arRequest.Request.UserInfo.Username == operatorNamespace {
+		glog.Infof("Change initiated by the pre-scaling operator for deployment %s - Allowing", newobject.Name)
 		return
 	}
 
-	if !optInValue {
-		glog.Infof("Optin label for deployment %s is false - Ignoring", newobject.Name)
-		return
-	}
-
-	if newobject.AvailableReplicas == newobject.SpecReplica {
-		glog.Infof("No replica update for deployment %s - Ignoring", newobject.Name)
+	// There are three main cases where we should not block an update:
+	// a) the optIn label is not present
+	// b) the optIn label is present but set to false
+	// c) there is an update in any other field other than the replicas
+	if !optInFound || !optInValue || newobject.AvailableReplicas == newobject.SpecReplica {
 		return
 	}
 
